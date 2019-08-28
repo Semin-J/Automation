@@ -25,7 +25,7 @@ access_right = 0o755
 
 # Date folder in archive path (Archving yesterday logs)
 yesterday = date.today() - timedelta(1)
-yesterday_path = os.path.join(archive_path, yesterday.strftime("%d-%b-%Y/"))
+yesterday_path = os.path.join(archive_path, yesterday.strftime("%d-%b-%Y"))
 
 
 # Create whole folder structure (extracted -> archive /date/)
@@ -92,7 +92,7 @@ def clean_up_folders(target_path):
 def zip_Ndays_old_logs(N = 3):
 
   old_Ndays = date.today() - timedelta(N)
-  old_Ndays_path = os.path.join(archive_path, old_Ndays.strftime("%d-%b-%Y/"))
+  old_Ndays_path = os.path.join(archive_path, old_Ndays.strftime("%d-%b-%Y"))
 
   if os.path.exists(old_Ndays_path):
     make_archive(old_Ndays_path, 'zip', old_Ndays_path)
