@@ -16,7 +16,7 @@ server_list  = ["front_A/", "front_B/", "app_A/", "app_B/"]
 sub_list = [["inst1/", "inst2/", "inst3/"], ["int1/", "int2/", "ext1/", "ext2/", "ext3/"]]
 
 root_path = "#"
-extracted_path = root_path + "extratced/"
+extracted_path = root_path + "extracted/"
 stat_path = root_path + "stat/"
 archive_temp_path = root_path + "archive/temp/"
 archive_path = root_path + "archive/"
@@ -86,32 +86,32 @@ def clean_up_folders(target_path):
 
 
 
-# Zip 3-day-old log folder
-def zip_3days_old_logs():
+# Zip (3)-day-old log folder
+def zip_Ndays_old_logs(N = 3):
 
-  old_3days = date.today() - timedelta(3)
-  old_3days_path = archive_path + old_3days.strftime("%d-%b-%Y/")
+  old_Ndays = date.today() - timedelta(N)
+  old_Ndays_path = archive_path + old_Ndays.strftime("%d-%b-%Y/")
 
-  if os.path.exists(old_3days_path):
-    make_archive(old_3days_path, 'zip', old_3days_path)
+  if os.path.exists(old_Ndays_path):
+    make_archive(old_Ndays_path, 'zip', old_Ndays_path)
 
     # slicing to get rid of '/' very end of path
-    if os.path.exists(old_3days_path[:-1] + '.zip'):
-      rmtree(old_3days_path)
+    if os.path.exists(old_Ndays_path[:-1] + '.zip'):
+      rmtree(old_Ndays_path)
 
-# end of zip_3days_old_logs
+# end of zip_Ndays_old_logs
 
 
 
 # Delete One old logs (By date, 95-day-old)
 # File creation time check is posible for Windows, but *nix
-def delete_oldest_log():
+def delete_oldest_log(N = 95):
 
   # Based on Date on folder name
-  old_95days = date.today() - timedelta(95)
-  old_95days_path = archive_path + old_95days.strftime("%d-%b-%Y.zip")
-  if os.path.exists(old_95days_path):
-    os.remove(old_95days_path)
+  old_Ndays = date.today() - timedelta(N)
+  old_Ndays_path = archive_path + old_Ndays.strftime("%d-%b-%Y.zip")
+  if os.path.exists(old_Ndays_path):
+    os.remove(old_Ndays_path)
 
 # end of delete_oldest_log
 
@@ -127,8 +127,8 @@ def main():
 
   clean_up_folders(stat_path)
   clean_up_folders(archive_temp_path)
-  zip_3days_old_logs()
-  delete_oldest_log()
+  zip_Ndays_old_logs(3)
+  delete_oldest_log(95)
 
 # end of main
 

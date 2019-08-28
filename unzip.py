@@ -13,7 +13,7 @@ server_list  = ["front_A/", "front_B/", "app_A/", "app_B/"]
 sub_list = [["inst1/", "inst2/", "inst3/"], ["int1/", "int2/", "ext1/", "ext2/", "ext3/"]]
 
 root_path = "#"
-extracted_path = root_path + "extratced/"
+extracted_path = root_path + "extracted/"
 stat_path = root_path + "stat/"
 archive_temp_path = root_path + "archive/temp/"
 
