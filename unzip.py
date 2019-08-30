@@ -1,5 +1,7 @@
 import tarfile  # To decompress .tgz, ,tar files
 import os  # To check directories
+import logging
+from datetime import date
 from shutil import move  # To move files over
 
 """
@@ -19,17 +21,23 @@ archive_temp_path = os.path.join(root_path, "archive", "temp")
 
 
 def change_folder(server, sub, is_mobile):
+  try:
+    landing_path = os.path.join(root_path, "landing") if is_mobile == False else os.path.join(root_path, "landing", "mobile")
+    paths = {}
+    paths['landing_path'] = os.path.join(landing_path, server, sub)
+    paths['extratced_path'] = os.path.join(landing_path, server, sub)
+    paths['stat_path'] = os.path.join(stat_path, server, sub)
+    paths['archive_temp_path'] = os.path.join(archive_temp_path, server, sub)
+    return paths
   
-  landing_path = os.path.join(root_path, "landing") if is_mobile == False else os.path.join(root_path, "landing", "mobile")
-  paths = {}
-  paths['landing_path'] = os.path.join(landing_path, server, sub)
-  paths['extratced_path'] = os.path.join(landing_path, server, sub)
-  paths['stat_path'] = os.path.join(stat_path, server, sub)
-  paths['archive_temp_path'] = os.path.join(archive_temp_path, server, sub)
-  return paths
+  except Exception as e:
+    logging.exception('Failed to create the dictionary of pthats:\n%s', e)
+
 
 
 def unzip_move(paths):
+
+  logging.debug('Paths are succefully passed!')
 
   file_list = os.listdir(paths['landing_path'])  # Fix the number of task (To prevent redundant job)
 
@@ -42,14 +50,28 @@ def unzip_move(paths):
       # Extract .trz files (landing_path -> extracted_path)
       file_path = os.path.join(paths['landing_path'] + file)
       tar = tarfile.open(file_path)
-      tar.extractall(paths['extracted_path'])
+      
+      try:
+        tar.extractall(paths['extracted_path'])
+        logging.debug('Files are extracted successfully!-1')
+      except Exception as e:
+        logging.exception('Failed to extract %s to %s:\n%s', file, paths['extracted_path'], e)
+      
       # Extract one more time for stats (landing_path -> stat_path)
-      tar.extractall(paths['stat_path'])
+      try:
+        tar.extractall(paths['stat_path'])
+        logging.debug('Files are extracted successfully!-2')
+      except Exception as e:
+        logging.exception('Failed to extract %s to %s:\n%s', file, paths['stat_path'], e)
       tar.close()
 
       # Move .trz files (landing_path -> archive_path)
       # shutil.move() using os.rename() and when the file system is different, does shutil.copy2() and removes sources
-      move(os.path.join(paths['landing_path'], file), os.path.join(paths['archive_temp_path'], file))
+      try:
+        move(os.path.join(paths['landing_path'], file), os.path.join(paths['archive_temp_path'], file))
+        logging.debug('Moving files succesfully!')
+      except Exception as e:
+        logging.exception('Failed to moving .trz files to archive/temp:\n%s', e)
     
     # end of for
 
@@ -60,6 +82,16 @@ def unzip_move(paths):
 
 
 def main():
+
+  # Create log file (Once created, append)
+  batch_log_path = '#'
+  today_pattern = date.today().strftime("%Y%m%d")
+  today_log_path = os.path.join(batch_log_path, (today_pattern + '_Debug_Error.log'))
+
+  logging.basicConfig(level = logging.DEBUG,
+                      filename = today_log_path,
+                      format = '%(asctime)s|%(levelname)s|%(module)s|%(message)s',
+                      datefmt = '%Y-%m-%d@%H:%M:%S')
 
   for is_mobile in range(0, 2, 1):
 
