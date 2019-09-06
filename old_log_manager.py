@@ -174,7 +174,7 @@ def main():
 
   logging.basicConfig(level = logging.DEBUG,
                       filename = today_log_path,
-                      format = '%(asctime)s|%(levelname)s|%(module)s|%(message)s',
+                      format = '%(asctime)s.%(msecs)03d|%(levelname)s|%(module)s|%(message)s',
                       datefmt = '%Y-%m-%d@%H:%M:%S')
 
   try:

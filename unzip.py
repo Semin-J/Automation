@@ -73,6 +73,7 @@ def unzip_move(paths):
       except Exception as e:
         logging.exception('Failed to moving .trz files to archive/temp:\n%s', e)
     
+  logging.debug('%d file(s) processed succesfully!', len(file_list))
     # end of for
 
   # end of if
@@ -90,7 +91,7 @@ def main():
 
   logging.basicConfig(level = logging.DEBUG,
                       filename = today_log_path,
-                      format = '%(asctime)s|%(levelname)s|%(module)s|%(message)s',
+                      format = '%(asctime)s.%(msecs)03d|%(levelname)s|%(module)s|%(message)s',
                       datefmt = '%Y-%m-%d@%H:%M:%S')
 
   for is_mobile in range(0, 2, 1):
