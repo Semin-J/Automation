@@ -1,6 +1,6 @@
 import tarfile  # To decompress .tgz, ,tar files
 import os  # To check directories
-import logging
+from setup_logger import setup_logger
 from datetime import date
 from shutil import move  # To move files over
 
@@ -10,10 +10,22 @@ from shutil import move  # To move files over
 1. Overwrite same name file automatically when it extracted
 """
 
+# Create log file (Once created, append)
+batch_log_path = '#'
+today_pattern = date.today().strftime("%Y%m%d")
 
+today_debug_log_path = os.path.join(batch_log_path, (today_pattern + '_Debug.log'))
+today_error_log_path = os.path.join(batch_log_path, (today_pattern + '_Error.log'))
+
+debug_log = setup_logger('deb_log', today_debug_log_path, logging.DEBUG)
+error_log = setup_logger('err_log', today_error_log_path, logging.ERROR)
+
+# Folder lists
+file_num = 0
 server_list  = ["front_A", "front_B", "app_A", "app_B"]
 sub_list = [["inst1", "inst2", "inst3"], ["int1", "int2", "ext1", "ext2", "ext3"]]
 
+# Folder paths
 root_path = "#"
 extracted_path = os.path.join(root_path, "extracted")
 stat_path = os.path.join(root_path, "stat")
@@ -31,13 +43,11 @@ def change_folder(server, sub, is_mobile):
     return paths
   
   except Exception as e:
-    logging.exception('Failed to create the dictionary of pthats:\n%s', e)
+    error_log.exception('Failed to create the dictionary of paths:\n%s\n%s', paths, e)
 
 
 
 def unzip_move(paths):
-
-  logging.debug('Paths are succefully passed!')
 
   file_list = os.listdir(paths['landing_path'])  # Fix the number of task (To prevent redundant job)
 
@@ -45,36 +55,41 @@ def unzip_move(paths):
     
     # Need to sort the list oldest - newest since logs are overwritten
     file_list.sort()
+    file_num += len(file_list)
 
     for file in file_list:
       # Extract .trz files (landing_path -> extracted_path)
       file_path = os.path.join(paths['landing_path'] + file)
+      
       tar = tarfile.open(file_path)
       
       try:
         tar.extractall(paths['extracted_path'])
-        logging.debug('Files are extracted successfully!-1')
+        debug_log.debug('%s is extracted to %s successfully!', file, paths['extracted_path'])
+      
       except Exception as e:
-        logging.exception('Failed to extract %s to %s:\n%s', file, paths['extracted_path'], e)
+        error_log.exception('Failed to extract %s to %s:\n%s', file, paths['extracted_path'], e)
       
       # Extract one more time for stats (landing_path -> stat_path)
       try:
         tar.extractall(paths['stat_path'])
-        logging.debug('Files are extracted successfully!-2')
+        debug_log.debug('%s is extracted to %s successfully!', file, paths['stat_path'])
       except Exception as e:
-        logging.exception('Failed to extract %s to %s:\n%s', file, paths['stat_path'], e)
+        error_log.exception('Failed to extract %s to %s:\n%s', file, paths['stat_path'], e)
+      
       tar.close()
 
       # Move .trz files (landing_path -> archive_path)
       # shutil.move() using os.rename() and when the file system is different, does shutil.copy2() and removes sources
       try:
         move(os.path.join(paths['landing_path'], file), os.path.join(paths['archive_temp_path'], file))
-        logging.debug('Moving files succesfully!')
+        debug_log.debug('Moving %s to %s successfully!', file, paths['archive_temp_path'])
       except Exception as e:
-        logging.exception('Failed to moving .trz files to archive/temp:\n%s', e)
+        error_log.exception('Failed to move %s to %s:\n%s', file, paths['archive_temp_path'], e)
     
-  logging.debug('%d file(s) processed succesfully!', len(file_list))
     # end of for
+    
+    error_log.info('%d file(s) in %s processed succesfully!', len(file_list), paths['landing_path'])
 
   # end of if
 
@@ -84,31 +99,27 @@ def unzip_move(paths):
 
 def main():
 
-  # Create log file (Once created, append)
-  batch_log_path = '#'
-  today_pattern = date.today().strftime("%Y%m%d")
-  today_log_path = os.path.join(batch_log_path, (today_pattern + '_Debug_Error.log'))
+  try:
+    error_log.info('unzip.py starts...')
 
-  logging.basicConfig(level = logging.DEBUG,
-                      filename = today_log_path,
-                      format = '%(asctime)s.%(msecs)03d|%(levelname)s|%(module)s|%(message)s',
-                      datefmt = '%Y-%m-%d@%H:%M:%S')
+    for is_mobile in range(0, 2, 1):
 
-  for is_mobile in range(0, 2, 1):
+      for server in range(0, 2, 1):
+        for sub in range(0, 3, 1):
+          unzip_move(change_folder(server_list[server], sub_list[0][sub], is_mobile))
 
-    for server in range(0, 2, 1):
-      for sub in range(0, 3, 1):
-        unzip_move(change_folder(server_list[server], sub_list[0][sub], is_mobile))
+      for server in range(2, 4, 1):
+        if is_mobile == False:
+          for sub in range(0, 5, 1):
+            unzip_move(change_folder(server_list[server], sub_list[1][sub], is_mobile))
+        else:
+          for sub in range(2, 5, 1):
+            unzip_move(change_folder(server_list[server], sub_list[1][sub], is_mobile))
+    
+    error_log.info('%d files are extracted and moved succesfully', file_num)
 
-    for server in range(2, 4, 1):
-      if is_mobile == False:
-        for sub in range(0, 5, 1):
-          unzip_move(change_folder(server_list[server], sub_list[1][sub], is_mobile))
-      else:
-        for sub in range(2, 5, 1):
-          unzip_move(change_folder(server_list[server], sub_list[1][sub], is_mobile))
-
-  # end of for
+  except Exception as e:
+    error_log.exception('unzip.py is unsuccessfully terminated:\n%s', e)
 
 # end of main
 
