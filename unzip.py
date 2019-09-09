@@ -18,7 +18,7 @@ today_debug_log_path = os.path.join(batch_log_path, (today_pattern + '_Debug.log
 today_error_log_path = os.path.join(batch_log_path, (today_pattern + '_Error.log'))
 
 debug_log = setup_logger('deb_log', today_debug_log_path, logging.DEBUG)
-error_log = setup_logger('err_log', today_error_log_path, logging.ERROR)
+error_log = setup_logger('err_log', today_error_log_path, logging.INFO)
 
 # Folder lists
 file_num = 0
