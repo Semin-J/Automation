@@ -1,4 +1,5 @@
-import os, logging
+import os
+from setup_logger import debug_log, info_error_log
 from shutil import move, make_archive, rmtree
 from datetime import date, timedelta
 from zipfile import ZipFile, ZIP_DEFLATED
@@ -9,9 +10,10 @@ from fnmatch import fnmatch
 1. This script need to create New Date Folder in Archive
 2. Create dated folders, copying extracted daily logs (Don't copy over empty folders)
 3. Don't move extracted folder itself - If the batch failed, there is no location for extracted files
-4. Logging, .exit() return should be implemented
+4. .exit() return should be implemented
 """
 
+# Folder lists
 server_list  = ["front_A", "front_B", "app_A", "app_B"]
 sub_list = [["inst1", "inst2", "inst3"], ["int1", "int2", "ext1", "ext2", "ext3"]]
 
@@ -41,10 +43,11 @@ def create_folders(target_path, access_right):
     for server in range(2, 4, 1):
       for sub in range(0, 5, 1):
         os.makedirs(os.path.join(target_path, server_list[server], sub_list[1][sub]), access_right, exist_ok = True)
-    logging.debug('All directories are created successfully in %s', target_path)
+    
+    info_error_log.info('All directories are created successfully in %s', target_path)
 
   except Exception as e:
-    logging.exception('Failed to create directory %s:\n%s', target, e)
+    info_error_log.exception('Failed to create directory %s:\n%s', target, e)
 
 # end of create_folders
 
@@ -68,7 +71,8 @@ def move_old_logs(origin_path, target_path):
         if len(origin_file_list) != 0:
           for file in origin_file_list:
             move(os.path.join(origin_path, server_list[server], sub_list[0][sub] + file), os.path.join(target_path, server_list[server], sub_list[0][sub], file))
-        
+          debug_log.debug('All files in %s are moved to %s successfully!', origin_file_path, target_file_path)
+
         elif (len(origin_file_list) == 0 and len(target_file_list) == 0):
           os.rmdir(os.path.join(target_path, server_list[server], sub_list[0][sub]))
         
@@ -85,16 +89,18 @@ def move_old_logs(origin_path, target_path):
         if len(origin_file_list) != 0:
           for file in origin_file_list:
             move(os.path.join(origin_path, server_list[server], sub_list[1][sub], file), os.path.join(target_path, server_list[server], sub_list[1][sub], file))
-        
+          debug_log.debug('All files in %s are moved to %s successfully!', origin_file_path, target_file_path)
+
         elif (len(origin_file_list) == 0 and len(target_file_list) == 0):
           os.rmdir(os.path.join(target_path, server_list[server], sub_list[1][sub]))
         
         elif (len(origin_file_list) == 0 and len(target_file_list) != 0):
           pass
-      logging.debug('All old logs are moved succesfully!')
+      
+      info_error_log.debug('All old logs are moved succesfully!')
     
   except Exception as e:
-    logging.exception('Failed to move old log from %s to %s:\n%s', origin_file_path, target_file_path, e)
+    info_error_log.exception('Failed to move old log from %s to %s:\n%s', origin_file_path, target_file_path, e)
 
 
 
@@ -109,15 +115,17 @@ def clean_up_folders(target_path):
         for file in folder[2]:
           if fnmatch(file, old_2days_pattern):
             os.remove(os.path.join(folder[0], file))
+      debug_log.debug('2-day-old trz files are deleted successfully!')
 
     else:  # Get rid of contents in any folder and its subfolders
       for folder in os.walk(target_path):
         for file in folder[2]:
           os.remove(os.path.join(folder[0], file))
-    logging.debug('All folders are cleaned up successfully!')
+    
+    info_error_log.info('All folders in %s are cleaned up successfully!', target_path)
 
   except Exception as e:
-    logging.exception('Failed to clean up folder:\n%s', e)
+    info_error_log.exception('Failed to clean up folder:\n%s', e)
 
 # end of clean_up_folders
 
@@ -136,10 +144,11 @@ def zip_Ndays_old_logs(N = 3):
 
       if os.path.exists(old_Ndays_path + '.zip'):
         rmtree(old_Ndays_path)
-    logging.debug('Zipped %s folder successfully!', old_Ndays_str)
+      
+      debug_log.debug('Zipped %s folder successfully!', old_Ndays_str)
 
   except Exception as e:
-    logging.exception('Failed to zip %s:\n%s', old_Ndays_str, e)
+    info_error_log.exception('Failed to zip %s:\n%s', old_Ndays_str, e)
 # end of zip_Ndays_old_logs
 
 
@@ -156,10 +165,10 @@ def delete_oldest_log(N = 95):
   try:
     if os.path.exists(old_Ndays_path):
       os.remove(old_Ndays_path)
-      logging.debug('Deleted %s log successfully', old_Ndays_str)
+      debug_log.debug('Deleted %s log successfully', old_Ndays_str)
 
   except Exception as e:
-    logging.exception('Failed to delete %s log:\n%s', old_Ndays_str, e)
+    info_error_log.exception('Failed to delete %s log:\n%s', old_Ndays_str, e)
 
 # end of delete_oldest_log
 
@@ -168,16 +177,11 @@ def delete_oldest_log(N = 95):
 def main():
 
   # Create log file (Once created, append)
-  batch_log_path = '#'
-  today_pattern = date.today().strftime("%Y%m%d")
-  today_log_path = os.path.join(batch_log_path, (today_pattern + '_Debug_Error.log'))
 
-  logging.basicConfig(level = logging.DEBUG,
-                      filename = today_log_path,
-                      format = '%(asctime)s.%(msecs)03d|%(levelname)s|%(module)s|%(message)s',
-                      datefmt = '%Y-%m-%d@%H:%M:%S')
 
   try:
+    info_error_log.info('old_log_manager.py starts...')
+
     # Check yesterday folder already exist or not, and create
     if not os.path.exists(yesterday_path):
       os.mkdir(yesterday_path, access_right)
@@ -190,10 +194,11 @@ def main():
     clean_up_folders(archive_temp_path)
     zip_Ndays_old_logs(3)
     delete_oldest_log(95)
-    logging.debug('old_log_manager.py job is done successfully!')
+    
+    info_error_log.info('old_log_manager.py job is done successfully!')
 
   except Exception as e:
-    logging.exception('old_log_manager.py unsuccessfully terminated:\n%s', e)
+    info_error_log.exception('old_log_manager.py unsuccessfully terminated:\n%s', e)
 
 # end of main
 

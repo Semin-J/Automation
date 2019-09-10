@@ -1,6 +1,6 @@
 import tarfile  # To decompress .tgz, ,tar files
-import os, logging
-from setup_logger import setup_logger
+import os
+from setup_logger import debug_log, info_error_log
 from datetime import date
 from shutil import move  # To move files over
 
@@ -9,16 +9,6 @@ from shutil import move  # To move files over
 **** It would be run every minute ****
 1. Overwrite same name file automatically when it extracted
 """
-
-# Create log files (Once created, append)
-batch_log_path = '#'
-today_pattern = date.today().strftime("%Y%m%d")
-
-today_debug_log_path = os.path.join(batch_log_path, (today_pattern + '_Debug.log'))
-today_info_error_log_path = os.path.join(batch_log_path, (today_pattern + '_Info_Error.log'))
-
-debug_log = setup_logger('deb_log', today_debug_log_path, logging.DEBUG)
-info_error_log = setup_logger('err_log', today_info_error_log_path, logging.INFO)
 
 # Folder lists
 file_num = 0
