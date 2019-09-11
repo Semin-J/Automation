@@ -45,6 +45,7 @@ def unzip_move(paths):
     
     # Need to sort the list oldest - newest since logs are overwritten
     file_list.sort()
+    global file_num
     file_num += len(file_list)
 
     for file in file_list:
